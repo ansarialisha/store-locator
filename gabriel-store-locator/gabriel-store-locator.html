@@ -1,0 +1,73 @@
+<html>
+    <head>
+        <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+        <link rel="stylesheet" href="store-locator.css">
+    </head>
+    <body>
+        <div x-data="storeLocatorComponent()" class="container">
+            <h2>Find the Nearest Gabriel & Co. Partner Store</h2>
+            <div class="div-p">
+                <input type="text" x-model="inputValue" @input="filterZipCodes" placeholder="Search by Location or Zip Code" required/>
+                <div x-show="zipCodeList.length" class="zip-code-list">
+                    <template x-for="zip in zipCodeList" :key="zip.description">
+                        <div class="zip-code-item" @click="selectZipCode(zip.add, zip.description)">
+                            <div x-text="zip.add"></div>
+                            <div x-text="zip.description" class="color"></div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+            <div class="result" x-text="showResult"></div>
+        </div>
+        <script>
+            function storeLocatorComponent() {
+                return {
+                    inputValue: '',
+                    showResult: '',
+                    zipCodeList: [],
+                    predictions: [],    
+                    baseUrl: 'test.php', 
+
+                    fetchURL: function() {
+                        let input = (this.inputValue);
+                        return `${this.baseUrl}?input=${input}&key=${this.apiKey}`;
+                    },
+                    filterZipCodes: async function() {
+                        if (!this.inputValue) {
+                            this.zipCodeList = [];
+                            this.showResult = '';
+                            return;
+                        }
+
+                        try {
+                            let response = await fetch(this.fetchURL());
+                            let data = await response.json();
+                            // console.log(data);
+                            if (data && data.predictions) {
+                                this.predictions = data.predictions;
+                                this.zipCodeList = this.predictions.map(prediction => ({
+                                    description: prediction.description,
+                                    add: prediction.terms[2]?.value
+
+                                }));
+                            } else {
+                                this.showResult = 'Invalid data format.';
+                            }
+                        } catch (error) {
+                            this.showResult = 'Error fetching data: ' + error.message;
+                        }
+                    },
+
+                    selectZipCode: function(zip, desc) {
+                        // console.log(zip);
+                        this.inputValue = zip;
+                        
+                    },
+                    cookie : document.cookie = 'zipcode-cookie=',
+                }
+                
+            }
+
+        </script>   
+    </body>
+</html>
